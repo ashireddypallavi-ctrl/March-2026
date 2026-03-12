@@ -1,0 +1,77 @@
+class DSU:
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.r = [0] * n
+
+    def find(self, x):
+        if self.p[x] != x:
+            self.p[x] = self.find(self.p[x])
+        return self.p[x]
+
+    def union(self, a, b):
+        pa, pb = self.find(a), self.find(b)
+        if pa == pb:
+            return False
+        if self.r[pa] < self.r[pb]:
+            pa, pb = pb, pa
+        self.p[pb] = pa
+        if self.r[pa] == self.r[pb]:
+            self.r[pa] += 1
+        return True
+
+
+class Solution:
+    def maxStability(self, n: int, edges: list[list[int]], k: int) -> int:
+
+        def possible(x):
+            dsu = DSU(n)
+            upgrades = 0
+            count = 0
+
+            # process must edges
+            for u, v, s, must in edges:
+                u -= 1
+                v -= 1
+                if must:
+                    if s < x:
+                        return False
+                    if not dsu.union(u, v):
+                        return False
+                    count += 1
+
+            optional = []
+
+            for u, v, s, must in edges:
+                u -= 1
+                v -= 1
+                if not must:
+                    if s >= x:
+                        optional.append((0, u, v))
+                    elif s * 2 >= x:
+                        optional.append((1, u, v))
+
+            optional.sort()
+
+            for cost, u, v in optional:
+                if dsu.union(u, v):
+                    upgrades += cost
+                    if upgrades > k:
+                        return False
+                    count += 1
+                    if count == n - 1:
+                        return True
+
+            return count == n - 1
+
+        left, right = 0, 2 * 10**5
+        ans = -1
+
+        while left <= right:
+            mid = (left + right) // 2
+            if possible(mid):
+                ans = mid
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        return ans
